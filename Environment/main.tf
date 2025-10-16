@@ -4,14 +4,6 @@ module "resource_group" {
   rg_location = "west europe"
 }
 
-module "key_vault" {
-  depends_on  = [module.resource_group]
-  source      = "../Module/azurerm_key_vault"
-  kv_name     = "demo-kv-pj2025"
-  kv_location = "west europe"
-  rg_name     = "demo-rg"
-}
-
 module "virtual_network" {
   depends_on    = [module.resource_group]
   source        = "../Module/azurerm_virtual_network"
@@ -37,7 +29,7 @@ module "pip" {
 }
 
 module "virtual_machine" {
-  depends_on   = [module.subnet, module.pip, module.key_vault]
+  depends_on   = [module.subnet, module.pip]
   source       = "../Module/azurerm_virtual_machine"
   nic_name     = "demo-nic"
   nic_location = "west europe"
@@ -49,5 +41,5 @@ module "virtual_machine" {
   snet_name    = "demo-snet"
   vnet_name    = "demo-vnet"
   pip_name     = "demo-pip"
-  kv_name      = "demo-kv-pj2025"
+  
 }

@@ -40,6 +40,3 @@ variable "pip_name" {
   
 }
 
-variable "kv_name" {
-  
-}
