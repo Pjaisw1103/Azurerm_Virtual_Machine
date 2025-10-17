@@ -17,6 +17,7 @@ It creates and manages key Azure components like Resource Group, Virtual Network
 
 <h2>📂 Folder Structure</h2>
 
+<pre>
 AZURERM_Virtual_Machine/
 ├── Environment/
 │ ├── main.tf
@@ -44,6 +45,9 @@ AZURERM_Virtual_Machine/
 │ ├── data.tf
 │ ├── main.tf
 │ └── variable.tf
+</pre>
+
+---
 
 <h2>🧠 Module Design</h2>
 
