@@ -24,27 +24,27 @@ AZURERM_Virtual_Machine/
 │ ├── provider.tf
 │ └── Module/
 ├── azurerm_resource_group/
-│ ├── main.tf
-│ ├── variable.tf
-│ ├── azurerm_virtual_network/
-│ │ ├── main.tf
-│ │ └── variable.tf
-│ ├── azurerm_subnet/
-│ │ ├── main.tf
-│ │ └── variable.tf
-│ ├── azurerm_network_security_group/
-│ │ ├── main.tf
-│ │ └── variable.tf
-│ ├── azurerm_network_security_rule/
-│ │ ├── main.tf
-│ │ └── variable.tf
-│ ├── azurerm_public_ip/
-│ │ ├── main.tf
-│ │ └── variable.tf
-│ └── azurerm_virtual_machine/
-│ ├── data.tf
-│ ├── main.tf
-│ └── variable.tf
+  ├── main.tf
+  ├── variable.tf
+  ├── azurerm_virtual_network/
+  │ ├── main.tf
+  │ └── variable.tf
+  ├── azurerm_subnet/
+  │ ├── main.tf
+  │ └── variable.tf
+  ├── azurerm_network_security_group/
+  │ ├── main.tf
+  │ └── variable.tf
+  ├── azurerm_network_security_rule/
+  │ ├── main.tf
+  │ └── variable.tf
+  ├── azurerm_public_ip/
+  │ ├── main.tf
+  │ └── variable.tf
+  └── azurerm_virtual_machine/
+  ├── data.tf
+  ├── main.tf
+  └── variable.tf
 </pre>
 
 ---
