@@ -106,4 +106,28 @@ vm_list = {
 | `tags` | `map` | No | Resource metadata tags. |
 
 ---
+
+---
+
+## 🚀 How to Run
+
+### 1️⃣ Prerequisites
+- Azure CLI installed and authenticated (`az login`).
+- Terraform v1.5+ installed.
+
+### 2️⃣ Step-by-Step Execution
+```bash
+# Initialize the workspace and download providers
+terraform init
+
+# Validate the syntax and configuration
+terraform validate
+
+# Preview the changes
+terraform plan -out=tfplan
+
+# Apply the configuration
+terraform apply "tfplan"
+```
+
 ✨ *Optimized for Azure Infrastructure Automation*
