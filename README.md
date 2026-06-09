@@ -1,75 +1,109 @@
-# 🚀 Azure Virtual Machine Infrastructure with Terraform
+# 🚀 Azure Virtual Machine Generic Module
 
-This project provides a production-ready, modular Terraform configuration to deploy a Linux Virtual Machine on Azure. It follows best practices by using separate modules for each resource and parameterizing all configurations.
+This module provides a scalable and generic approach to deploy multiple **Azure Linux Virtual Machines** using a single module declaration. It utilizes `for_each` and structured objects to manage complex configurations including Network Interfaces (NICs), Network Security Groups (NSGs), and Public IP addresses.
 
-## 📁 Project Structure
+## 🏗️ Architecture Diagram
+
+```mermaid
+graph TD
+    A[Terraform Configuration] -->|vm_list Map| B(Generic VM Module)
+    
+    subgraph "Azure Resources (per VM entry)"
+        B --> C{NIC Creation}
+        B --> D[Linux VM]
+        B --> E{Optional NSG}
+        B --> F{Data: Subnet}
+        B --> G{Data: Public IP}
+        
+        F --> C
+        G -.->|If Defined| C
+        E -.->|If Defined| C
+        C --> D
+    end
+    
+    style B fill:#f9f,stroke:#333,stroke-width:2px
+    style D fill:#bbf,stroke:#333,stroke-width:2px
+```
+
+## 📂 Project Structure
 
 ```text
-AZURERM_Virtual_Machine/
-├── Environment/                # Main deployment folder
-│   ├── main.tf                 # Root module configuration
-│   ├── variables.tf            # Variable declarations for environment
-│   ├── terraform.tfvars        # Values for variables (Input)
-│   └── provider.tf             # AzureRM provider configuration
-├── Module/                     # Reusable resource modules
-│   ├── azurerm_resource_group/
-│   ├── azurerm_virtual_network/
-│   ├── azurerm_subnet/
-│   ├── azurerm_public_ip/
-│   └── azurerm_virtual_machine/ # Refactored "Genuine" VM Module
-│       ├── main.tf             # Resource definitions (NIC, NSG, VM)
-│       ├── variable.tf         # Typed & Documented Variables
-│       └── data.tf             # Fetching existing Subnet & Public IP
-└── README.md                   # This file
+Module/azurerm_virtual_machine/
+├── main.tf      # Core logic using for_each and dynamic blocks
+├── variable.tf  # Structured variable definitions (Required & Optional)
+├── data.tf      # Dynamic data lookups for Network resources
+└── README.md    # Module documentation
 ```
 
-## 🛠️ Module: azurerm_virtual_machine
+## 🛠️ Key Features
 
-The Virtual Machine module has been refactored to be highly flexible and "genuine". Key improvements include:
+- **Multi-VM Deployment**: Deploy an entire fleet of VMs with different configurations in a single block.
+- **Generic & Flexible**: Supports custom NIC names, optional Public IPs, and conditional NSG associations.
+- **Dynamic Security Rules**: Easily define multiple inbound/outbound rules per VM using dynamic blocks.
+- **Modern Terraform Features**: Implementation uses `optional()` type constraints, `coalesce` for logic, and `base64encode` for custom data.
+- **Resource Group Flexibility**: Allows resources (VNet/Subnet/PIP) to reside in different resource groups than the VM.
 
-- **Dynamic NSG Rules:** Configure any number of security rules using a list of objects.
-- **Typed Variables:** All variables have descriptions and types.
-- **Terraform Functions:** Uses `base64encode`, `coalesce`, and `dynamic` blocks.
-- **Customizable:** Easily change VM size, OS image, and admin credentials.
+## 📖 Usage Guide
 
-### Required Variables
+### 1. Module Declaration in `main.tf`
 
-| Name | Description | Type |
-|------|-------------|------|
-| `rg_name` | Resource Group Name | `string` |
-| `vm_name` | Virtual Machine Name | `string` |
-| `vm_location` | Azure Region | `string` |
-| `nic_name` | Network Interface Name | `string` |
-| `nsg_name` | Network Security Group Name | `string` |
-| `admin_password` | Administrator Password (Sensitive) | `string` |
-
-### Default Settings
-- **VM Size:** `Standard_DS1_v2`
-- **OS:** Ubuntu 22.04 LTS (Jammy)
-- **User:** `azureuser`
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- [Terraform](https://www.terraform.io/downloads.html) installed.
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) authenticated (`az login`).
-
-### 2. Configuration
-Update `Environment/terraform.tfvars` with your desired values.
-
-### 3. Deployment
-```bash
-cd Environment
-terraform init
-terraform plan
-terraform apply -auto-approve
+```hcl
+module "virtual_machines" {
+  source  = "../Module/azurerm_virtual_machine"
+  vm_list = var.vm_list
+}
 ```
 
-## ✨ Features
-- ✅ **Infrastructure as Code:** 100% automated deployment.
-- ✅ **Security:** Integrated NSG with dynamic rule support.
-- ✅ **Best Practices:** Use of `sensitive` variables and `coalesce` for robust resource placement.
-- ✅ **Scalability:** Modular design allows for easy extension.
+### 2. Configuration Example in `terraform.tfvars`
+
+```hcl
+vm_list = {
+  "frontend-web" = {
+    vm_name         = "vm-prod-web-01"
+    vm_location     = "East US"
+    rg_name         = "rg-production"
+    vm_size         = "Standard_DS2_v2"
+    admin_password  = "ComplexPassword123!"
+    
+    nic_name        = "nic-web-01"
+    snet_name       = "snet-frontend"
+    vnet_name       = "vnet-prod"
+    
+    pip_name        = "pip-web-01" # Optional: Public IP name
+    
+    nsg_name        = "nsg-web-01" # Optional: NSG name
+    security_rules  = [
+      {
+        name                       = "AllowHTTP"
+        priority                   = 100
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        destination_port_range     = "80"
+        # ... other required rule fields
+      }
+    ]
+  }
+}
+```
+
+## 📝 Input Variables Reference (vm_list)
+
+| Attribute | Type | Required | Default / Description |
+| :--- | :--- | :---: | :--- |
+| `vm_name` | `string` | **Yes** | The name of the Virtual Machine. |
+| `vm_location` | `string` | **Yes** | Azure Region (e.g., East US). |
+| `rg_name` | `string` | **Yes** | Resource Group for the VM. |
+| `admin_password` | `string` | **Yes** | Admin password (sensitive). |
+| `nic_name` | `string` | **Yes** | Name of the Network Interface. |
+| `snet_name` | `string` | **Yes** | Target Subnet for the NIC. |
+| `vnet_name` | `string` | **Yes** | Virtual Network containing the subnet. |
+| `vm_size` | `string` | No | Default: `Standard_DS1_v2`. |
+| `admin_username` | `string` | No | Default: `azureuser`. |
+| `pip_name` | `string` | No | Set to attach a Public IP. |
+| `nsg_name` | `string` | No | Set to create and attach an NSG. |
+| `security_rules` | `list` | No | Custom firewall rules for the NSG. |
+| `tags` | `map` | No | Resource metadata tags. |
 
 ---
-Developed with ❤️ by Gemini CLI
+✨ *Optimized for Azure Infrastructure Automation*

@@ -28,23 +28,18 @@ module "pip" {
   pip_location = var.pip_location
 }
 
+# Generic Virtual Machine Module Call
 module "virtual_machine" {
   depends_on   = [module.subnet, module.pip]
   source       = "../Module/azurerm_virtual_machine"
-  
   rg_name      = var.rg_name
-  vm_name      = var.vm_name
-  vm_location  = var.vm_location
-  
-  nic_name     = var.nic_name
-  nsg_name     = var.nsg_name
-  
-  admin_username = var.admin_username
-  admin_password = var.admin_password
-  
-  snet_name    = var.snet_name
   vnet_name    = var.vnet_name
+  snet_name    = var.snet_name
+  vm_name      = var.vm_name
+  nic_name     = var.nic_name
+  vm_location  = var.rg_location
+  nsg_name     = var.nsg_name
   pip_name     = var.pip_name
-  
-  tags = var.tags
+  admin_password = var.admin_password
+
 }

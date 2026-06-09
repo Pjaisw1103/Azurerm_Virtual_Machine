@@ -1,25 +1,28 @@
 resource "azurerm_network_interface" "azurerm_nic" {
-  name                = var.nic_name
-  location            = coalesce(var.nic_location, var.vm_location)
-  resource_group_name = var.rg_name
-  tags                = var.tags
+  for_each            = var.vm_list
+  name                = each.value.nic_name
+  location            = each.value.vm_location
+  resource_group_name = each.value.rg_name
+  tags                = each.value.tags
 
   ip_configuration {
-    name                          = "internal"
-    subnet_id                     = data.azurerm_subnet.snet.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = data.azurerm_public_ip.pip.id
+    name                          = each.value.ip_configuration_name
+    subnet_id                     = data.azurerm_subnet.snet[each.key].id
+    private_ip_address_allocation = each.value.private_ip_address_allocation
+    private_ip_address            = each.value.private_ip_address
+    public_ip_address_id          = each.value.pip_name != null ? data.azurerm_public_ip.pip[each.key].id : null
   }
 }
 
 resource "azurerm_network_security_group" "azurerm_nsg" {
-  name                = var.nsg_name
-  location            = coalesce(var.nsg_location, var.vm_location)
-  resource_group_name = var.rg_name
-  tags                = var.tags
+  for_each            = { for k, v in var.vm_list : k => v if v.nsg_name != null }
+  name                = each.value.nsg_name
+  location            = each.value.vm_location
+  resource_group_name = each.value.rg_name
+  tags                = each.value.tags
 
   dynamic "security_rule" {
-    for_each = var.security_rules
+    for_each = each.value.security_rules
     content {
       name                       = security_rule.value.name
       priority                   = security_rule.value.priority
@@ -35,31 +38,34 @@ resource "azurerm_network_security_group" "azurerm_nsg" {
 }
 
 resource "azurerm_network_interface_security_group_association" "azurerm_nisga" {
-  network_interface_id      = azurerm_network_interface.azurerm_nic.id
-  network_security_group_id = azurerm_network_security_group.azurerm_nsg.id
+  for_each                  = { for k, v in var.vm_list : k => v if v.nsg_name != null }
+  network_interface_id      = azurerm_network_interface.azurerm_nic[each.key].id
+  network_security_group_id = azurerm_network_security_group.azurerm_nsg[each.key].id
 }
 
 resource "azurerm_linux_virtual_machine" "azurerm_vm" {
-  name                            = var.vm_name
-  resource_group_name             = var.rg_name
-  location                        = var.vm_location
-  size                            = var.vm_size
-  admin_username                  = var.admin_username
-  admin_password                  = var.admin_password
-  disable_password_authentication = var.disable_password_authentication
-  network_interface_ids           = [azurerm_network_interface.azurerm_nic.id]
-  custom_data                     = var.custom_data != null ? base64encode(var.custom_data) : null
-  tags                            = var.tags
+  for_each                        = var.vm_list
+  name                            = each.value.vm_name
+  resource_group_name             = each.value.rg_name
+  location                        = each.value.vm_location
+  size                            = each.value.vm_size
+  admin_username                  = each.value.admin_username
+  admin_password                  = each.value.admin_password
+  disable_password_authentication = each.value.disable_password_authentication
+  network_interface_ids           = [azurerm_network_interface.azurerm_nic[each.key].id]
+  custom_data                     = each.value.custom_data != null ? base64encode(each.value.custom_data) : null
+  tags                            = each.value.tags
 
   os_disk {
-    caching              = var.os_disk_caching
-    storage_account_type = var.os_disk_storage_account_type
+    caching              = each.value.os_disk_caching
+    storage_account_type = each.value.os_disk_storage_account_type
+    disk_size_gb         = each.value.os_disk_size_gb
   }
 
   source_image_reference {
-    publisher = var.source_image_reference.publisher
-    offer     = var.source_image_reference.offer
-    sku       = var.source_image_reference.sku
-    version   = var.source_image_reference.version
+    publisher = each.value.source_image_reference.publisher
+    offer     = each.value.source_image_reference.offer
+    sku       = each.value.source_image_reference.sku
+    version   = each.value.source_image_reference.version
   }
 }

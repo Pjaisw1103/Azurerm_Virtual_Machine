@@ -5,14 +5,13 @@ variable "vnet_location" {}
 variable "snet_name" {}
 variable "pip_name" {}
 variable "pip_location" {}
-variable "vm_name" {}
-variable "vm_location" {}
-variable "nic_name" {}
-variable "nsg_name" {}
-variable "admin_username" {}
-variable "admin_password" {
-  sensitive = true
+
+# Generic VM List
+variable "vm_list" {
+  description = "A map of virtual machine configurations"
+  type = any # Using any here to simplify, but the module enforces the type
 }
+
 variable "tags" {
   type = map(string)
 }
