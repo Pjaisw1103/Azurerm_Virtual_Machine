@@ -1,133 +1,226 @@
 # 🚀 Azure Virtual Machine Generic Module
 
-This module provides a scalable and generic approach to deploy multiple **Azure Linux Virtual Machines** using a single module declaration. It utilizes `for_each` and structured objects to manage complex configurations including Network Interfaces (NICs), Network Security Groups (NSGs), and Public IP addresses.
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=240&text=Azure%20Virtual%20Machine%20Module&fontSize=42&fontAlignY=40&desc=Terraform%20%7C%20Azure%20%7C%20Reusable%20Infrastructure&descAlignY=60&fontColor=ffffff&animation=fadeIn&color=0:0078D4,50:623CE4,100:0D1117"/>
+</p>
 
-## 🏗️ Architecture Diagram
+<p align="center">
+  <img src="https://img.shields.io/badge/Terraform-623CE4?style=for-the-badge&logo=terraform&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Microsoft%20Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Reusable%20Module-IaC-success?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Status-Production%20Ready-22C55E?style=for-the-badge"/>
+</p>
+
+---
+
+## 📌 Overview
+
+A reusable and scalable Terraform module designed to provision multiple **Azure Linux Virtual Machines** using a single module declaration.
+
+The module leverages:
+
+* `for_each`
+* Structured Objects
+* Dynamic Blocks
+* Optional Attributes
+* Reusable Infrastructure Patterns
+
+to deploy VMs, NICs, NSGs, Public IPs, and subnet associations efficiently.
+
+---
+
+## ✨ Key Features
+
+| Feature                  | Description                               |
+| ------------------------ | ----------------------------------------- |
+| 🚀 Multi-VM Deployment   | Deploy multiple VMs using a single module |
+| 🔄 Reusable Architecture | Generic and scalable Terraform design     |
+| 🌐 Network Integration   | NIC, Subnet & Public IP support           |
+| 🔐 Dynamic NSG Rules     | Create custom inbound/outbound rules      |
+| ⚡ Modern Terraform       | Uses optional(), for_each, coalesce       |
+| ☁️ Azure Native          | Built specifically for Azure workloads    |
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    A[Terraform Configuration] -->|vm_list Map| B(Generic VM Module)
-    
-    subgraph "Azure Resources (per VM entry)"
-        B --> C{NIC Creation}
-        B --> D[Linux VM]
-        B --> E{Optional NSG}
-        B --> F{Data: Subnet}
-        B --> G{Data: Public IP}
-        
-        F --> C
-        G -.->|If Defined| C
-        E -.->|If Defined| C
-        C --> D
-    end
-    
-    style B fill:#f9f,stroke:#333,stroke-width:2px
-    style D fill:#bbf,stroke:#333,stroke-width:2px
+flowchart TD
+
+A[Terraform Configuration]
+--> B[Generic VM Module]
+
+B --> C[Network Interface]
+B --> D[Linux Virtual Machine]
+B --> E[Network Security Group]
+B --> F[Subnet Lookup]
+B --> G[Public IP Lookup]
+
+F --> C
+G --> C
+E --> C
+
+C --> D
 ```
+
+---
+
+## 📊 Module Capabilities
+
+<p align="center">
+
+<img src="https://img.shields.io/badge/Multi%20VM-Supported-0078D4?style=for-the-badge"/>
+
+<img src="https://img.shields.io/badge/Dynamic%20NSG-Rules-623CE4?style=for-the-badge"/>
+
+<img src="https://img.shields.io/badge/Public%20IP-Optional-0EA5E9?style=for-the-badge"/>
+
+<img src="https://img.shields.io/badge/Reusable-Module-22C55E?style=for-the-badge"/>
+
+</p>
+
+---
 
 ## 📂 Project Structure
 
 ```text
-Module/azurerm_virtual_machine/
-├── main.tf      # Core logic using for_each and dynamic blocks
-├── variable.tf  # Structured variable definitions (Required & Optional)
-├── data.tf      # Dynamic data lookups for Network resources
-└── README.md    # Module documentation
+Module/
+└── azurerm_virtual_machine/
+    ├── main.tf
+    ├── variables.tf
+    ├── data.tf
+    └── README.md
 ```
 
-## 🛠️ Key Features
+---
 
-- **Multi-VM Deployment**: Deploy an entire fleet of VMs with different configurations in a single block.
-- **Generic & Flexible**: Supports custom NIC names, optional Public IPs, and conditional NSG associations.
-- **Dynamic Security Rules**: Easily define multiple inbound/outbound rules per VM using dynamic blocks.
-- **Modern Terraform Features**: Implementation uses `optional()` type constraints, `coalesce` for logic, and `base64encode` for custom data.
-- **Resource Group Flexibility**: Allows resources (VNet/Subnet/PIP) to reside in different resource groups than the VM.
+## 🚀 Usage
 
-## 📖 Usage Guide
-
-### 1. Module Declaration in `main.tf`
+### Module Declaration
 
 ```hcl
 module "virtual_machines" {
   source  = "../Module/azurerm_virtual_machine"
+
   vm_list = var.vm_list
 }
 ```
 
-### 2. Configuration Example in `terraform.tfvars`
+---
+
+### Example Configuration
 
 ```hcl
 vm_list = {
-  "frontend-web" = {
-    vm_name         = "vm-prod-web-01"
-    vm_location     = "East US"
-    rg_name         = "rg-production"
-    vm_size         = "Standard_DS2_v2"
-    admin_password  = "ComplexPassword123!"
-    
-    nic_name        = "nic-web-01"
-    snet_name       = "snet-frontend"
-    vnet_name       = "vnet-prod"
-    
-    pip_name        = "pip-web-01" # Optional: Public IP name
-    
-    nsg_name        = "nsg-web-01" # Optional: NSG name
-    security_rules  = [
+  frontend-web = {
+
+    vm_name        = "vm-prod-web-01"
+    vm_location    = "East US"
+    rg_name        = "rg-production"
+
+    vm_size        = "Standard_DS2_v2"
+
+    nic_name       = "nic-web-01"
+
+    vnet_name      = "vnet-prod"
+    snet_name      = "snet-frontend"
+
+    pip_name       = "pip-web-01"
+
+    nsg_name       = "nsg-web-01"
+
+    security_rules = [
       {
-        name                       = "AllowHTTP"
-        priority                   = 100
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        destination_port_range     = "80"
-        # ... other required rule fields
+        name                   = "AllowHTTP"
+        priority               = 100
+        direction              = "Inbound"
+        access                 = "Allow"
+        protocol               = "Tcp"
+        destination_port_range = "80"
       }
     ]
   }
 }
 ```
 
-## 📝 Input Variables Reference (vm_list)
+---
 
-| Attribute | Type | Required | Default / Description |
-| :--- | :--- | :---: | :--- |
-| `vm_name` | `string` | **Yes** | The name of the Virtual Machine. |
-| `vm_location` | `string` | **Yes** | Azure Region (e.g., East US). |
-| `rg_name` | `string` | **Yes** | Resource Group for the VM. |
-| `admin_password` | `string` | **Yes** | Admin password (sensitive). |
-| `nic_name` | `string` | **Yes** | Name of the Network Interface. |
-| `snet_name` | `string` | **Yes** | Target Subnet for the NIC. |
-| `vnet_name` | `string` | **Yes** | Virtual Network containing the subnet. |
-| `vm_size` | `string` | No | Default: `Standard_DS1_v2`. |
-| `admin_username` | `string` | No | Default: `azureuser`. |
-| `pip_name` | `string` | No | Set to attach a Public IP. |
-| `nsg_name` | `string` | No | Set to create and attach an NSG. |
-| `security_rules` | `list` | No | Custom firewall rules for the NSG. |
-| `tags` | `map` | No | Resource metadata tags. |
+## 🧩 Supported Configuration
+
+| Resource                 | Support    |
+| ------------------------ | ---------- |
+| Azure Linux VM           | ✅          |
+| Network Interface        | ✅          |
+| Public IP                | ✅ Optional |
+| Network Security Group   | ✅ Optional |
+| Dynamic Security Rules   | ✅          |
+| Custom Tags              | ✅          |
+| Multiple Resource Groups | ✅          |
+| Multi-VM Deployment      | ✅          |
 
 ---
 
----
+## ⚙️ Execution Steps
 
-## 🚀 How to Run
+### Initialize
 
-### 1️⃣ Prerequisites
-- Azure CLI installed and authenticated (`az login`).
-- Terraform v1.5+ installed.
-
-### 2️⃣ Step-by-Step Execution
 ```bash
-# Initialize the workspace and download providers
 terraform init
-
-# Validate the syntax and configuration
-terraform validate
-
-# Preview the changes
-terraform plan -out=tfplan
-
-# Apply the configuration
-terraform apply "tfplan"
 ```
 
-✨ *Optimized for Azure Infrastructure Automation*
+### Validate
+
+```bash
+terraform validate
+```
+
+### Plan
+
+```bash
+terraform plan -out=tfplan
+```
+
+### Deploy
+
+```bash
+terraform apply tfplan
+```
+
+### Destroy
+
+```bash
+terraform destroy
+```
+
+---
+
+## 📈 Why This Module?
+
+* Reduces Terraform code duplication
+* Supports enterprise-style VM deployments
+* Simplifies NSG and NIC management
+* Easy to scale from 1 VM to multiple VMs
+* Maintains clean Infrastructure as Code practices
+
+---
+
+## 👩‍💻 Author
+
+**Priya Jaiswal**
+
+Azure Cloud | DevOps | Terraform
+
+<p align="center">
+  <a href="https://github.com/Pjaisw1103">
+    <img src="https://img.shields.io/badge/GitHub-Pjaisw1103-181717?style=for-the-badge&logo=github"/>
+  </a>
+  <a href="https://linkedin.com/in/priya-jaiswal1103">
+    <img src="https://img.shields.io/badge/LinkedIn-Priya%20Jaiswal-0078D4?style=for-the-badge&logo=linkedin"/>
+  </a>
+</p>
+
+---
+
+<p align="center">
+⭐ If this module helped you, consider giving the repository a star.
+</p>
