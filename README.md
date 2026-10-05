@@ -1,100 +1,88 @@
-# 🚀 Azure Virtual Machine Generic Module
+# Azure Virtual Machine Terraform Module
 
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=240&text=Azure%20Virtual%20Machine%20Module&fontSize=42&fontAlignY=40&desc=Terraform%20%7C%20Azure%20%7C%20Reusable%20Infrastructure&descAlignY=60&fontColor=ffffff&animation=fadeIn&color=0:0078D4,50:623CE4,100:0D1117"/>
-</p>
+[![Terraform](https://img.shields.io/badge/Terraform-%235849BE.svg?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Azure](https://img.shields.io/badge/Azure-%230072C6.svg?style=flat&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/)
+[![IaC](https://img.shields.io/badge/IaC-Reusable_Module-blue?style=flat)](https://github.com/Pjaisw1103/Azurerm_Virtual_Machine)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Terraform-623CE4?style=for-the-badge&logo=terraform&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Microsoft%20Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Reusable%20Module-IaC-success?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-22C55E?style=for-the-badge"/>
-</p>
+A generic, scalable Terraform module for deploying and managing Azure Linux Virtual Machines. Built using modern Terraform constructs (`for_each`, dynamic blocks, optional attributes, and data lookups), this module allows you to provision single or multiple VMs, network interfaces, security groups, and public IP associations cleanly through a single map declaration.
 
 ---
 
-## 📌 Overview
+## Features
 
-A reusable and scalable Terraform module designed to provision multiple **Azure Linux Virtual Machines** using a single module declaration.
-
-The module leverages:
-
-* `for_each`
-* Structured Objects
-* Dynamic Blocks
-* Optional Attributes
-* Reusable Infrastructure Patterns
-
-to deploy VMs, NICs, NSGs, Public IPs, and subnet associations efficiently.
+- **Multi-VM Provisioning**: Deploy multiple Linux VMs dynamically using a single module block.
+- **Dynamic Security Groups**: Configure customizable inbound/outbound NSG rules per virtual machine.
+- **Flexible Network Association**: Attach existing subnets and optional Public IPs seamlessly using built-in data sources.
+- **Customizable OS & Storage**: Easily specify custom OS images, disk caching policy, and storage account types.
+- **Optional Credentials & Custom Data**: Supports password authentication, SSH keys, and custom bootstrap scripts (`custom_data`).
 
 ---
 
-## ✨ Key Features
+## Project Structure
 
-| Feature                  | Description                               |
-| ------------------------ | ----------------------------------------- |
-| 🚀 Multi-VM Deployment   | Deploy multiple VMs using a single module |
-| 🔄 Reusable Architecture | Generic and scalable Terraform design     |
-| 🌐 Network Integration   | NIC, Subnet & Public IP support           |
-| 🔐 Dynamic NSG Rules     | Create custom inbound/outbound rules      |
-| ⚡ Modern Terraform       | Uses optional(), for_each, coalesce       |
-| ☁️ Azure Native          | Built specifically for Azure workloads    |
+```text
+Azurerm_Virtual_Machine/
+├── Environment/
+│   ├── main.tf          # Environment composition & module invocations
+│   ├── provider.tf      # Azure provider configuration
+│   └── variables.tf     # Environment-level variables
+└── Module/
+    ├── azurerm_public_ip/
+    ├── azurerm_resource_group/
+    ├── azurerm_subnet/
+    ├── azurerm_virtual_network/
+    └── azurerm_virtual_machine/
+        ├── main.tf      # Network interface, NSG, and VM resources
+        ├── variable.tf  # Type schema definition for vm_list
+        └── data.tf      # Data sources for Subnet and Public IP lookups
+```
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
-
-A[Terraform Configuration]
---> B[Generic VM Module]
-
-B --> C[Network Interface]
-B --> D[Linux Virtual Machine]
-B --> E[Network Security Group]
-B --> F[Subnet Lookup]
-B --> G[Public IP Lookup]
-
-F --> C
-G --> C
-E --> C
-
-C --> D
+    SubnetData[Subnet Data Lookup]
+    PipData[Public IP Data Lookup]
+    
+    SubnetData --> NIC[Network Interface]
+    PipData -. Optional .-> NIC
+    
+    NIC --> VM[Linux Virtual Machine]
+    
+    NSG[Network Security Group] -. Optional .-> NSGAssoc[NSG Association]
+    NIC --> NSGAssoc
 ```
 
 ---
 
-## 📊 Module Capabilities
+## Module Schema & Inputs
 
-<p align="center">
+The module expects a `vm_list` variable of type `map(object({...}))`. Below are the key configuration attributes available for each VM entry:
 
-<img src="https://img.shields.io/badge/Multi%20VM-Supported-0078D4?style=for-the-badge"/>
-
-<img src="https://img.shields.io/badge/Dynamic%20NSG-Rules-623CE4?style=for-the-badge"/>
-
-<img src="https://img.shields.io/badge/Public%20IP-Optional-0EA5E9?style=for-the-badge"/>
-
-<img src="https://img.shields.io/badge/Reusable-Module-22C55E?style=for-the-badge"/>
-
-</p>
-
----
-
-## 📂 Project Structure
-
-```text
-Module/
-└── azurerm_virtual_machine/
-    ├── main.tf
-    ├── variables.tf
-    ├── data.tf
-    └── README.md
-```
+| Attribute | Type | Required | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `vm_name` | `string` | Yes | - | Name of the Azure Linux Virtual Machine |
+| `vm_location` | `string` | Yes | - | Azure region (e.g., `East US`) |
+| `rg_name` | `string` | Yes | - | Target Resource Group name |
+| `vm_size` | `string` | No | `"Standard_DS1_v2"` | Azure VM SKU size |
+| `admin_username` | `string` | No | `"azureuser"` | Administrative username |
+| `admin_password` | `string` | No | `null` | Administrative password |
+| `disable_password_authentication` | `bool` | No | `false` | Disable password authentication |
+| `nic_name` | `string` | Yes | - | Name of the primary Network Interface |
+| `snet_name` | `string` | Yes | - | Subnet name for network association |
+| `vnet_name` | `string` | Yes | - | Virtual Network name for subnet lookup |
+| `vnet_rg_name` | `string` | No | `rg_name` | Resource group of the VNet (if different) |
+| `pip_name` | `string` | No | `null` | Public IP resource name (if attaching a Public IP) |
+| `pip_rg_name` | `string` | No | `rg_name` | Resource group of the Public IP (if different) |
+| `nsg_name` | `string` | No | `null` | Network Security Group name to create & attach |
+| `security_rules` | `list(object)` | No | `[]` | Inbound/outbound NSG security rules |
+| `tags` | `map(string)` | No | `{}` | Key-value pairs for resource tagging |
 
 ---
 
-## 🚀 Usage
+## Usage Example
 
 ### Module Declaration
 
@@ -106,121 +94,80 @@ module "virtual_machines" {
 }
 ```
 
----
-
-### Example Configuration
+### Example `terraform.tfvars`
 
 ```hcl
 vm_list = {
-  frontend-web = {
-
+  web_server = {
     vm_name        = "vm-prod-web-01"
     vm_location    = "East US"
     rg_name        = "rg-production"
-
     vm_size        = "Standard_DS2_v2"
+    admin_username = "azureuser"
 
     nic_name       = "nic-web-01"
-
     vnet_name      = "vnet-prod"
     snet_name      = "snet-frontend"
-
     pip_name       = "pip-web-01"
 
     nsg_name       = "nsg-web-01"
-
     security_rules = [
       {
-        name                   = "AllowHTTP"
-        priority               = 100
-        direction              = "Inbound"
-        access                 = "Allow"
-        protocol               = "Tcp"
-        destination_port_range = "80"
+        name                       = "AllowHTTP"
+        priority                   = 100
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "80"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+      },
+      {
+        name                       = "AllowSSH"
+        priority                   = 110
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
       }
     ]
+
+    tags = {
+      Environment = "Production"
+      Role        = "Web"
+    }
   }
 }
 ```
 
 ---
 
-## 🧩 Supported Configuration
-
-| Resource                 | Support    |
-| ------------------------ | ---------- |
-| Azure Linux VM           | ✅          |
-| Network Interface        | ✅          |
-| Public IP                | ✅ Optional |
-| Network Security Group   | ✅ Optional |
-| Dynamic Security Rules   | ✅          |
-| Custom Tags              | ✅          |
-| Multiple Resource Groups | ✅          |
-| Multi-VM Deployment      | ✅          |
-
----
-
-## ⚙️ Execution Steps
-
-### Initialize
+## Deployment Workflow
 
 ```bash
+# Initialize working directory
 terraform init
-```
 
-### Validate
-
-```bash
+# Validate syntax and configuration
 terraform validate
-```
 
-### Plan
+# Review execution plan
+terraform plan
 
-```bash
-terraform plan -out=tfplan
-```
-
-### Deploy
-
-```bash
-terraform apply tfplan
-```
-
-### Destroy
-
-```bash
-terraform destroy
+# Apply changes to Azure
+terraform apply
 ```
 
 ---
 
-## 📈 Why This Module?
+## Author
 
-* Reduces Terraform code duplication
-* Supports enterprise-style VM deployments
-* Simplifies NSG and NIC management
-* Easy to scale from 1 VM to multiple VMs
-* Maintains clean Infrastructure as Code practices
+**Priya Jaiswal**  
+Azure Cloud & DevOps Engineer
 
----
+[GitHub](https://github.com/Pjaisw1103) • [LinkedIn](https://linkedin.com/in/priya-jaiswal1103)
 
-## 👩‍💻 Author
-
-**Priya Jaiswal**
-
-Azure Cloud | DevOps | Terraform
-
-<p align="center">
-  <a href="https://github.com/Pjaisw1103">
-    <img src="https://img.shields.io/badge/GitHub-Pjaisw1103-181717?style=for-the-badge&logo=github"/>
-  </a>
-  <a href="https://linkedin.com/in/priya-jaiswal1103">
-    <img src="https://img.shields.io/badge/LinkedIn-Priya%20Jaiswal-0078D4?style=for-the-badge&logo=linkedin"/>
-  </a>
-</p>
-
----
-
-<p align="center">
-⭐ If this module helped you, consider giving the repository a star.
-</p>
